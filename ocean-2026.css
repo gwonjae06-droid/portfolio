@@ -63,3 +63,89 @@ main{position:relative;z-index:3}
 header{z-index:30}
 .sound-toggle{z-index:31}
 .depth-rule{z-index:32}
+
+
+/* V2 immersive descent: a real photographic surface, a restrained viewport frame,
+   complete photo fade by the deep sea, and stars only at abyssal depth. */
+#ocean-photo{
+  z-index:0;
+  transform:translate3d(var(--photo-shift-x,0px),var(--photo-shift-y,0px),0) scale(var(--photo-scale,1.065));
+  transform-origin:center 18%;
+  opacity:var(--photo-opacity,1);
+  filter:brightness(.77) saturate(.90) blur(var(--photo-blur,0px));
+}
+#ocean-photo::after{
+  content:"";
+  position:absolute;inset:-7%;
+  background:
+    radial-gradient(ellipse 42% 13% at 28% 6%,rgba(205,251,255,.23),transparent 100%),
+    radial-gradient(ellipse 34% 15% at 73% 14%,rgba(215,250,255,.17),transparent 100%),
+    radial-gradient(ellipse 34% 12% at 51% 27%,rgba(159,224,243,.15),transparent 100%);
+  mix-blend-mode:screen;
+  filter:blur(19px);
+  transform:translate3d(0,0,0);
+  animation:water-light-drift 12s ease-in-out infinite alternate;
+}
+@keyframes water-light-drift{
+  0%{transform:translate3d(-2%,0,0) scale(1.02);opacity:.43}
+  45%{transform:translate3d(1.4%,1.2%,0) scale(1.04);opacity:.72}
+  100%{transform:translate3d(3%,-1%,0) scale(1.01);opacity:.55}
+}
+#ocean{z-index:1}
+#starfield{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  opacity:var(--stars-opacity,0);
+  transform:translate3d(0,var(--star-drift,0px),0);
+  will-change:opacity;
+  background-repeat:no-repeat;
+}
+#starfield::after{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 13% 28%,rgba(237,247,255,.94) 0 1.3px,transparent 2.5px),
+    radial-gradient(circle at 76% 17%,rgba(216,237,255,.9) 0 1.1px,transparent 2.1px),
+    radial-gradient(circle at 52% 73%,rgba(236,246,255,.76) 0 1.2px,transparent 2px),
+    radial-gradient(circle at 89% 66%,rgba(225,241,255,.88) 0 1px,transparent 2px);
+  animation:star-breathing 7.5s ease-in-out infinite alternate;
+}
+@keyframes star-breathing{from{opacity:.5}to{opacity:.9}}
+.veil{z-index:3!important}
+main{z-index:4!important}
+header{z-index:39!important}
+.sound-toggle{z-index:40!important}
+.depth-rule{z-index:41!important}
+.descent-frame{
+  position:fixed;inset:13px;z-index:35;pointer-events:none;
+  border:1px solid rgba(205,239,247,.2);
+  border-radius:17px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.descent-frame::before{
+  content:"";position:absolute;inset:9px;
+  border:1px solid rgba(200,233,245,.07);
+  border-radius:11px;
+}
+.frame-corner{position:absolute;width:30px;height:30px;border-color:rgba(220,248,254,.42)}
+.frame-tl{top:9px;left:9px;border-top:1px solid;border-left:1px solid;border-radius:9px 0 0 0}
+.frame-tr{top:9px;right:9px;border-top:1px solid;border-right:1px solid;border-radius:0 9px 0 0}
+.frame-bl{bottom:9px;left:9px;border-bottom:1px solid;border-left:1px solid;border-radius:0 0 0 9px}
+.frame-br{bottom:9px;right:9px;border-bottom:1px solid;border-right:1px solid;border-radius:0 0 9px 0}
+.frame-label{
+  position:absolute;
+  font:500 8px/1.4 var(--s);
+  letter-spacing:.2em;color:rgba(218,242,252,.55);
+  background:#03132199;padding:2px 8px;
+}
+.frame-label-top{top:-8px;left:46px}
+.frame-label-bottom{bottom:-8px;right:46px}
+@media(max-width:620px){
+  .descent-frame{inset:6px;border-radius:11px}
+  .descent-frame::before{inset:6px;border-radius:7px}
+  .frame-corner{width:15px;height:15px}
+  .frame-label{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  #ocean-photo::after,#starfield::after{animation:none!important}
+  #ocean-photo{transform:none!important;will-change:auto}
+  #starfield{transform:none!important;will-change:auto}
+}
