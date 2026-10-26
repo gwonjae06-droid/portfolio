@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102b30">
+  <meta name="description" content="하루의 기분과 작은 순간들을 모아, 내 삶의 흐름을 돌아보는 개인 다이어리.">
+  <title>내 인생 다이어리 · 하루의 조각</title><link rel="icon" href="../assets/diary-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css"><script defer src="./diary.js"></script>
+</head>
+<body>
+  <header><a href="../#projects" class="back">← 포트폴리오</a><span>DAILY FRAGMENTS · 01</span><span class="private">나의 브라우저에 보관</span></header>
+  <main>
+    <section class="intro"><img src="../assets/diary-mark.svg" width="52" height="52" alt="펼친 책과 별 로고" style="margin-bottom:20px"><p class="eyebrow">LIFE, ONE DAY AT A TIME</p><h1>내 인생 다이어리<span>지나온 하루가, 나를 보여줍니다.</span></h1><p>잘한 날도, 조금 느렸던 날도.<br>오늘의 마음과 작은 순간을 한 장씩 남겨 보세요.</p></section>
+    <div class="layout">
+      <section class="paper" aria-labelledby="write-title">
+        <div class="paper-top"><h2 id="write-title">오늘의 한 페이지</h2><span id="entry-state">새 기록</span></div>
+        <form id="entry-form">
+          <label for="date">기록할 날짜</label><input type="date" id="date" name="date" required>
+          <fieldset class="moods"><legend>오늘의 마음은 어땠나요?</legend><div>
+            <label><input type="radio" name="mood" value="1" required><span>☂<small>힘들었어</small></span></label>
+            <label><input type="radio" name="mood" value="2"><span>☁<small>조금 흐림</small></span></label>
+            <label><input type="radio" name="mood" value="3"><span>◒<small>그저 그래</small></span></label>
+            <label><input type="radio" name="mood" value="4"><span>☀<small>괜찮았어</small></span></label>
+            <label><input type="radio" name="mood" value="5"><span>✧<small>행복했어</small></span></label>
+          </div></fieldset>
+          <label for="title">오늘을 한 문장으로</label><input id="title" name="title" maxlength="100" placeholder="오래 기억하고 싶은 순간이 있었나요?" required>
+          <label for="body">나에게 남기는 이야기 <span class="optional">선택</span></label><textarea id="body" name="body" rows="6" maxlength="10000" placeholder="무슨 일이 있었는지, 어떤 마음이 들었는지 자유롭게 적어 주세요."></textarea>
+          <div class="numbers"><div><label for="sleep">수면 시간 <span class="optional">선택</span></label><div class="unit"><input id="sleep" name="sleep" type="number" min="0" max="24" step="0.5" placeholder="7.5"><span>시간</span></div></div><div><label for="focus">집중 시간 <span class="optional">선택</span></label><div class="unit"><input id="focus" name="focus" type="number" min="0" max="24" step="0.5" placeholder="2"><span>시간</span></div></div></div>
+          <div class="save-row"><button type="submit" class="primary">오늘의 조각 저장하기 <span>↗</span></button><button type="button" id="today" class="text-btn">오늘로 이동</button></div>
+          <p id="status" role="status" aria-live="polite"></p>
+        </form>
+        <p class="storage-note">기록은 이 기기의 현재 브라우저에만 저장됩니다. 다른 기기와 자동으로 동기화되지 않으며, 브라우저 데이터를 지우면 사라질 수 있어요. 소중한 기록은 아래에서 백업해 주세요.</p>
+      </section>
+      <aside>
+        <section class="summary" aria-labelledby="summary-title"><p class="eyebrow">A LITTLE LOOK BACK</p><h2 id="summary-title">내 하루의 흐름</h2><div class="stats"><div><strong id="total">0</strong><span>쌓인 하루</span></div><div><strong id="avg-sleep">—</strong><span>평균 수면 · 시간</span></div><div><strong id="avg-focus">—</strong><span>평균 집중 · 시간</span></div></div><div class="chart-heading"><h3>최근 14일의 마음</h3><span>오늘 기준</span></div><div id="chart" class="chart" role="img" aria-label="아직 기분 기록이 없습니다."></div><p class="hint">기분은 선택한 다섯 단계로 표시합니다. 기록하지 않은 날은 비워 둡니다.</p></section>
+        <section class="archive" aria-labelledby="archive-title"><div class="archive-head"><h2 id="archive-title">쌓여 가는 조각들</h2><label class="sr-only" for="month">기록 월 선택</label><input id="month" type="month"></div><label class="sr-only" for="search">기록 검색</label><input id="search" type="search" placeholder="기억나는 단어로 찾아보기" maxlength="100"><div id="entries"></div></section>
+        <section class="backup"><h2>기록을 안전하게 간직하기</h2><div><button type="button" id="export">백업 내려받기 ↓</button><label class="import-label" for="import">백업 불러오기 ↑</label><input class="sr-only" id="import" type="file" accept="application/json,.json"></div><p>같은 날짜의 기록이 있으면 현재 기록을 유지합니다.</p><p id="backup-status" role="status" aria-live="polite"></p></section>
+      </aside>
+    </div>
+    <footer>하루를 평가하기보다, 나를 조금 더 알아 가는 기록.<a href="../#projects">이권재의 작업으로 돌아가기 ↗</a></footer>
+  </main>
+  <dialog id="leave-dialog"><h2>아직 저장하지 않은 내용이 있어요.</h2><p>다른 날짜로 이동하면 작성 중인 내용은 사라집니다.</p><div><button id="stay">계속 작성</button><button id="leave" class="primary">저장하지 않고 이동</button></div></dialog>
+</body></html>
