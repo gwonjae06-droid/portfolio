@@ -1,5 +1,6 @@
 'use strict';
 const KEY='life-diary.entries.v1';
+const DRAFT_KEY='life-diary.draft.v1';
 const $=id=>document.getElementById(id);
 const form=$('entry-form'),moods=['','힘들었어','조금 흐림','그저 그래','괜찮았어','행복했어'];
 const localDate=(date=new Date())=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
@@ -8,6 +9,26 @@ const validHours=n=>n===null||(typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<
 function validEntry(e){return e&&validDate(e.date)&&Number.isInteger(e.mood)&&e.mood>=1&&e.mood<=5&&typeof e.title==='string'&&e.title.trim().length>0&&e.title.length<=100&&typeof e.body==='string'&&e.body.length<=10000&&validHours(e.sleep)&&validHours(e.focus);}
 function clean(e){return {date:e.date,mood:e.mood,title:e.title.trim(),body:e.body,sleep:e.sleep,focus:e.focus};}
 let entries={},selected=localDate(),dirty=false,blocked=false,pending=null;
+// Unsaved writing is kept only in this browser tab. Internal navigation and the browser
+// back button must never depend on a native beforeunload confirmation dialog.
+function saveDraft(){
+  if(!dirty)return;
+  try{sessionStorage.setItem(DRAFT_KEY,JSON.stringify({date:selected,mood:form.elements.mood.value,title:$('title').value,body:$('body').value,sleep:$('sleep').value,focus:$('focus').value}));}catch{/* Private browsing may block storage; navigation must still work. */}
+}
+function clearDraft(){try{sessionStorage.removeItem(DRAFT_KEY);}catch{}}
+function restoreDraft(){
+  let draft;
+  try{draft=JSON.parse(sessionStorage.getItem(DRAFT_KEY)||'null');}catch{return;}
+  if(!draft||!validDate(draft.date)||typeof draft.title!=='string'||typeof draft.body!=='string'||draft.title.length>100||draft.body.length>10000)return;
+  loadDate(draft.date);
+  form.elements.mood.value=['1','2','3','4','5'].includes(draft.mood)?draft.mood:'';
+  $('title').value=draft.title;
+  $('body').value=draft.body;
+  for(const key of ['sleep','focus']){const value=draft[key];if(typeof value==='string'&&/^(?:[0-9]{1,2}(?:\.5)?|)$/.test(value))$(key).value=value;}
+  dirty=true;
+  if(!blocked)$('status').textContent='작성 중이던 내용을 복원했습니다. 포트폴리오로 돌아가도 같은 탭에서는 임시 보관됩니다.';
+}
+
 try{const raw=localStorage.getItem(KEY);if(raw){const data=JSON.parse(raw);if(!Array.isArray(data)||!data.every(validEntry))throw Error('invalid');entries=Object.fromEntries(data.map(e=>[e.date,clean(e)]));}}
 catch{blocked=true;$('status').textContent='저장된 기록을 읽지 못했습니다. 기존 데이터를 보호하기 위해 새 저장을 멈췄습니다. 브라우저 저장소 설정을 확인해 주세요.';}
 function persist(next){try{localStorage.setItem(KEY,JSON.stringify(Object.values(next)));entries=next;return true;}catch{$('status').textContent='저장하지 못했습니다. 브라우저 저장 공간이나 개인정보 보호 설정을 확인해 주세요. 작성 내용은 화면에 남아 있습니다.';return false;}}
@@ -16,17 +37,20 @@ function loadDate(date){selected=date;form.reset();$('date').value=date;const e=
 function changeDate(date){if(!validDate(date)){$('date').value=selected;return;}$('date').value=selected;if(date===selected)return;if(dirty){pending=date;$('leave-dialog').showModal();}else loadDate(date);}
 $('date').min='1900-01-01';$('date').max='2100-12-31';
 $('date').addEventListener('change',()=>changeDate($('date').value));
-form.addEventListener('input',event=>{if(event.target.id!=='date')dirty=true;});
+form.addEventListener('input',event=>{if(event.target.id!=='date'){dirty=true;saveDraft();}});
+form.addEventListener('change',event=>{if(event.target.id!=='date'){dirty=true;saveDraft();}});
 $('today').addEventListener('click',()=>changeDate(localDate()));
 $('stay').addEventListener('click',()=>{pending=null;$('leave-dialog').close();});
 $('leave-dialog').addEventListener('cancel',()=>{pending=null;});
-$('leave').addEventListener('click',()=>{const date=pending;pending=null;$('leave-dialog').close();if(date)loadDate(date);});
-window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
+$('leave').addEventListener('click',()=>{const date=pending;pending=null;$('leave-dialog').close();if(date){clearDraft();loadDate(date);}});
+// Avoid beforeunload: some in-app browsers swallow the native confirmation and
+// make the portfolio link and browser Back appear broken. A tab-scoped draft is safer.
+window.addEventListener('pagehide',saveDraft);
 form.addEventListener('submit',event=>{
   event.preventDefault();if(blocked)return;if(!form.reportValidity())return;
   const e={date:selected,mood:Number(form.elements.mood.value),title:$('title').value.trim(),body:$('body').value,sleep:$('sleep').value===''?null:Number($('sleep').value),focus:$('focus').value===''?null:Number($('focus').value)};
   if(!validEntry(e)){$('status').textContent='날짜, 한 문장 기록, 시간 입력을 확인해 주세요.';return;}
-  if(persist({...entries,[selected]:e})){dirty=false;$('entry-state').textContent='저장된 기록 수정';$('status').textContent='이 브라우저에 저장했어요. 오늘의 조각이 하나 쌓였습니다.';$('month').value=selected.slice(0,7);render();}
+  if(persist({...entries,[selected]:e})){dirty=false;clearDraft();$('entry-state').textContent='저장된 기록 수정';$('status').textContent='이 브라우저에 저장했어요. 오늘의 조각이 하나 쌓였습니다.';$('month').value=selected.slice(0,7);render();}
 });
 function render(){
   const all=Object.values(entries);$('total').textContent=all.length;
@@ -51,4 +75,4 @@ $('import').addEventListener('change',async event=>{
 });
 // Never silently overwrite another open tab's newer records.
 window.addEventListener('storage',event=>{if(event.key===KEY){blocked=true;form.querySelector('[type=submit]').disabled=true;$('status').textContent='다른 탭에서 기록이 바뀌었습니다. 작성 중인 내용을 복사해 보관한 뒤 새로고침해 주세요.';}});
-form.querySelector('[type=submit]').disabled=blocked;loadDate(selected);render();
+form.querySelector('[type=submit]').disabled=blocked;loadDate(selected);restoreDraft();render();
