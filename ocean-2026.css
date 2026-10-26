@@ -53,3 +53,13 @@ footer{flex-wrap:wrap;gap:12px}
 @media(max-width:1020px){.grid,.why-grid{grid-template-columns:1fr 1fr!important}.entry{grid-template-columns:180px 1fr;gap:22px}}
 @media(max-width:680px){.grid,.why-grid,.thought-columns,.shelves{grid-template-columns:1fr!important}.entry{grid-template-columns:1fr;gap:8px;padding:25px 0}.entry-side span{font-size:13px}.zone{min-height:0!important;padding:110px 0 128px!important}.project-intro,.section-lead{font-size:13px}.card .art{height:170px!important}.card .body p{min-height:0}nav{gap:11px!important;justify-content:space-between!important}.glass{padding:23px!important}h1{font-size:37px!important}.intro-thought{font-size:13px!important}.toward,.unknown-note{padding:24px 15px}}
 @media(prefers-reduced-motion:reduce){#ocean-photo{transform:none;will-change:auto}}
+
+
+/* Keep the photographic, transparent canvas and haze layers above the page background. */
+#ocean-photo{z-index:0}
+#ocean{z-index:1}
+.veil{z-index:2}
+main{position:relative;z-index:3}
+header{z-index:30}
+.sound-toggle{z-index:31}
+.depth-rule{z-index:32}
