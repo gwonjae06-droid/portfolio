@@ -9,102 +9,210 @@ let renderer=null,w=innerWidth,h=innerHeight,last=0,time=0,accumulator=0,raf=0,s
 const rand=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);};
 const stars=Array.from({length:180},(_,i)=>({x:rand(i+2),y:rand(i+203),size:i%19===0?2:.35+rand(i+92)*.9,phase:rand(i+339)*6.28}));
 
-// Constellations live only around the closing chapter, away from the central copy.
+// DREAM BIG. — bright white, handwriting-like constellations.
+// Every letter consists of actual star nodes and connected strokes, not a text image.
+// This artwork is confined to the final chapter; surface water is unchanged.
 const closingChapter=document.getElementById('depths');
-const constellationPaths=[
- [[.075,.19],[.16,.13],[.25,.24],[.32,.20],[.35,.34],[.26,.41]],
- [[.76,.13],[.86,.20],[.935,.14],[.90,.32],[.79,.39],[.73,.32]],
- [[.07,.80],[.17,.66],[.245,.77],[.32,.69],[.38,.85]],
- [[.70,.74],[.79,.64],[.91,.76],[.86,.88]]
-];
-let constellationStartedAt=null;
-function starVertex(point,i,t){
- const sway=reduced.matches?0:Math.sin(t*.12+i*1.83)*1.6;
- return {x:point[0]*w+sway,y:point[1]*h+sway*.65};
+const constellationGlyphs={
+ D:{advance:1.02,strokes:[
+  [[.09,.04],[.09,1]],
+  [[.09,.04],[.37,.04],[.63,.11],[.83,.29],[.89,.50],[.82,.75],[.61,.92],[.37,1],[.09,1]]
+ ]},
+ r:{advance:.66,strokes:[
+  [[.10,.46],[.10,1]],
+  [[.10,.64],[.24,.46],[.40,.42],[.55,.48]]
+ ]},
+ e:{advance:.82,strokes:[
+  [[.08,.70],[.32,.70],[.58,.66],[.66,.54],[.55,.44],[.33,.42],[.14,.51],[.09,.73],[.17,.91],[.39,1],[.65,.91]]
+ ]},
+ a:{advance:.84,strokes:[
+  [[.60,.51],[.43,.42],[.24,.43],[.10,.58],[.10,.80],[.26,.96],[.47,.94],[.60,.73],[.60,.51]],
+  [[.60,.45],[.60,.98]]
+ ]},
+ m:{advance:1.22,strokes:[
+  [[.09,1],[.09,.45]],
+  [[.09,.62],[.22,.43],[.39,.43],[.53,.58],[.53,1]],
+  [[.53,.61],[.69,.43],[.86,.43],[1.03,.60],[1.03,1]]
+ ]},
+ b:{advance:.84,strokes:[
+  [[.10,.04],[.10,1]],
+  [[.10,.58],[.28,.45],[.48,.43],[.66,.58],[.69,.75],[.54,.93],[.32,1],[.10,.89]]
+ ]},
+ i:{advance:.35,strokes:[
+  [[.17,.47],[.17,1]],
+  [[.17,.16],[.17,.17]]
+ ]},
+ g:{advance:.85,strokes:[
+  [[.63,.53],[.46,.42],[.25,.43],[.10,.60],[.12,.80],[.27,.94],[.47,.93],[.62,.73],[.63,.53]],
+  [[.63,.43],[.63,1.10],[.51,1.28],[.32,1.35],[.12,1.29]]
+ ]},
+ '.':{advance:.25,strokes:[[[.11,.97],[.13,1.02]]]},
+ ' ':{advance:.47,strokes:[]}
+};
+let constellationStartedAt=null,constellationLayout=null,constellationLastSize='';
+let constellationStarSprite=null;
+function makeConstellationStar(){
+ const c=document.createElement('canvas');c.width=c.height=96;
+ const p=c.getContext('2d'),mid=48;
+ const g=p.createRadialGradient(mid,mid,0,mid,mid,42);
+ g.addColorStop(0,'rgba(255,255,255,1)');
+ g.addColorStop(.08,'rgba(255,255,255,.92)');
+ g.addColorStop(.26,'rgba(255,255,255,.23)');
+ g.addColorStop(1,'rgba(255,255,255,0)');
+ p.fillStyle=g;p.fillRect(0,0,96,96);
+ // Four tapered diffraction spikes, bright pure white.
+ p.fillStyle='rgba(255,255,255,.98)';
+ p.beginPath();
+ p.moveTo(mid,8);p.lineTo(mid+2.3,mid-3);
+ p.lineTo(84,mid);p.lineTo(mid+2.3,mid+1.7);
+ p.lineTo(mid,88);p.lineTo(mid-2.3,mid+1.7);
+ p.lineTo(12,mid);p.lineTo(mid-2.3,mid-3);
+ p.closePath();p.fill();
+ p.fillStyle='#fff';p.beginPath();p.arc(mid,mid,3.1,0,Math.PI*2);p.fill();
+ return c;
 }
-function traceConstellation(points,fraction){
- if(fraction<=0)return null;
- const segments=[];let total=0;
- for(let i=1;i<points.length;i++){
-  const distance=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);
-  segments.push(distance);total+=distance;
+function buildConstellationLayout(){
+ const mobile=w<730;
+ const rows=mobile?['Dream','big.']:['Dream big.'];
+ const spacing=.085;
+ function rowWidth(row){
+  return [...row].reduce((sum,ch)=>sum+constellationGlyphs[ch].advance+spacing,0)-spacing;
  }
- let remaining=total*clamp(fraction),tip=points[0];
+ const longest=Math.max(...rows.map(rowWidth));
+ const unit=Math.min(w*(mobile?.92:.91)/longest,h*(mobile?.175:.285));
+ const top=mobile?h*.145:h*.17;
+ const rowStep=mobile?unit*1.75:0;
+ let charIndex=0;
+ const letters=[];
+ rows.forEach((row,rowIndex)=>{
+  const total=rowWidth(row)*unit;
+  let cursor=(w-total)/2;
+  for(const ch of row){
+   const glyph=constellationGlyphs[ch];
+   if(glyph.strokes.length){
+    const x=cursor,y=top+rowIndex*rowStep;
+    const strokes=glyph.strokes.map(stroke=>{
+     const raw=stroke.map(([gx,gy])=>({x:x+gx*unit,y:y+gy*unit}));
+     const spaced=[];
+     raw.forEach((point,i)=>{
+      if(i===0){spaced.push(point);return;}
+      const prev=raw[i-1],dist=Math.hypot(point.x-prev.x,point.y-prev.y);
+      const subdivisions=Math.max(1,Math.ceil(dist/(mobile?16:23)));
+      for(let j=1;j<=subdivisions;j++){
+       const q=j/subdivisions;
+       spaced.push({x:prev.x+(point.x-prev.x)*q,y:prev.y+(point.y-prev.y)*q});
+      }
+     });
+     return spaced;
+    });
+    letters.push({ch,index:charIndex,strokes});
+    charIndex++;
+   }
+   cursor+=(glyph.advance+spacing)*unit;
+  }
+ });
+ return letters;
+}
+function getConstellationLayout(){
+ const sizeKey=w+'x'+h;
+ if(!constellationLayout||constellationLastSize!==sizeKey){
+  constellationLayout=buildConstellationLayout();
+  constellationLastSize=sizeKey;
+ }
+ return constellationLayout;
+}
+function partialConstellationStroke(points,amount){
+ const length=points.length;
+ if(length<2||amount<=0)return null;
+ let total=0;
+ const segments=[];
+ for(let i=1;i<length;i++){
+  const d=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);
+  segments.push(d);total+=d;
+ }
+ let remaining=total*clamp(amount);
+ let tip=points[0];
  ctx.beginPath();ctx.moveTo(tip.x,tip.y);
  for(let i=0;i<segments.length;i++){
-  const a=points[i],b=points[i+1],d=segments[i];
-  if(remaining>=d){ctx.lineTo(b.x,b.y);tip=b;remaining-=d;}
-  else{
+  const d=segments[i],a=points[i],b=points[i+1];
+  if(remaining>=d){
+   ctx.lineTo(b.x,b.y);tip=b;remaining-=d;
+  }else{
    const u=d?remaining/d:0;
    tip={x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u};
-   ctx.lineTo(tip.x,tip.y);break;
+   ctx.lineTo(tip.x,tip.y);
+   break;
   }
  }
  return tip;
 }
-function glowStar(x,y,size,alpha,t,phase){
+function drawLetterStar(x,y,size,alpha){
  if(alpha<=.005)return;
- const r=size*3.6,g=ctx.createRadialGradient(x,y,0,x,y,r);
- g.addColorStop(0,'rgba(240,249,255,'+(alpha*.44).toFixed(3)+')');
- g.addColorStop(.24,'rgba(156,208,255,'+(alpha*.12).toFixed(3)+')');
- g.addColorStop(1,'rgba(112,172,238,0)');
- ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
- const blink=reduced.matches?1:.78+.22*Math.sin(t*1.9+phase);
- ctx.fillStyle='rgba(231,246,255,'+(alpha*blink*.88).toFixed(3)+')';
- ctx.beginPath();ctx.moveTo(x,y-size*1.65);
- ctx.lineTo(x+size*.13,y-size*.18);
- ctx.lineTo(x+size*1.28,y);
- ctx.lineTo(x+size*.13,y+size*.16);
- ctx.lineTo(x,y+size*1.65);
- ctx.lineTo(x-size*.13,y+size*.16);
- ctx.lineTo(x-size*1.28,y);
- ctx.lineTo(x-size*.13,y-size*.18);
- ctx.closePath();ctx.fill();
+ if(!constellationStarSprite)constellationStarSprite=makeConstellationStar();
+ const s=size,half=s*.5;
+ ctx.globalAlpha=clamp(alpha);
+ ctx.drawImage(constellationStarSprite,x-half,y-half,s,s);
 }
 function drawConstellations(t){
  if(!closingChapter||!ctx)return;
  const box=closingChapter.getBoundingClientRect();
- if(box.top>=h*.98||box.bottom<=h*.06){constellationStartedAt=null;return;}
+ // Re-arm when the reader scrolls back above the closing section.
+ if(box.top>h*.88||box.bottom<h*.04){
+  constellationStartedAt=null;
+  return;
+ }
+ if(box.top>h*.80)return;
  if(constellationStartedAt===null)constellationStartedAt=t;
- const visibility=clamp((h*.98-box.top)/(h*.58))*clamp((box.bottom-h*.06)/(h*.28));
+ const visibility=clamp((h*.84-box.top)/(h*.45));
  if(visibility<.002)return;
- const elapsed=reduced.matches?Infinity:Math.max(0,t-constellationStartedAt);
- const mobile=w<650;
- ctx.save();ctx.globalCompositeOperation='screen';ctx.lineCap='round';ctx.lineJoin='round';
- constellationPaths.forEach((path,pathIndex)=>{
-  const pts=path.map((p,i)=>starVertex(p,i+pathIndex*7,t));
-  const p=reduced.matches?1:clamp((elapsed-pathIndex*.54)/2.15);
-  const eased=p*p*(3-2*p);
-  const pulse=reduced.matches?1:.86+.14*Math.sin(t*.91+pathIndex*1.27);
-  // The entire constellation is barely visible before the bright joining trace.
-  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
-  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);
-  ctx.shadowBlur=0;ctx.lineWidth=mobile?.58:.74;
-  ctx.strokeStyle='rgba(172,204,232,'+(visibility*.058).toFixed(3)+')';ctx.stroke();
-  if(eased>.001){
-   ctx.shadowColor='rgba(155,213,255,.65)';
-   ctx.shadowBlur=mobile?9:17;ctx.lineWidth=mobile?1.6:2.3;
-   ctx.strokeStyle='rgba(102,177,242,'+(visibility*.15*eased*pulse).toFixed(3)+')';
-   const tip=traceConstellation(pts,eased);ctx.stroke();
-   ctx.shadowBlur=mobile?4:7;ctx.lineWidth=mobile?.65:1.05;
-   ctx.strokeStyle='rgba(214,239,255,'+(visibility*.52*eased*pulse).toFixed(3)+')';
-   traceConstellation(pts,eased);ctx.stroke();ctx.shadowBlur=0;
-   // A moving point of light traces the path one segment at a time.
-   if(p>.03&&p<.98&&tip){
-    const r=mobile?9:13,g=ctx.createRadialGradient(tip.x,tip.y,0,tip.x,tip.y,r);
-    g.addColorStop(0,'rgba(255,255,255,'+(visibility*.56).toFixed(3)+')');
-    g.addColorStop(.3,'rgba(176,221,255,'+(visibility*.18).toFixed(3)+')');
-    g.addColorStop(1,'rgba(176,221,255,0)');
-    ctx.fillStyle=g;ctx.fillRect(tip.x-r,tip.y-r,r*2,r*2);
+ const letters=getConstellationLayout();
+ const elapsed=reduced.matches?999:Math.max(0,t-constellationStartedAt);
+ const mobile=w<730;
+ ctx.save();
+ ctx.globalCompositeOperation='screen';
+ ctx.lineCap='round';ctx.lineJoin='round';
+ for(const letter of letters){
+  const letterProgress=reduced.matches?1:clamp((elapsed-letter.index*.36)/1.15);
+  const eased=letterProgress*letterProgress*(3-2*letterProgress);
+  for(let j=0;j<letter.strokes.length;j++){
+   const pts=letter.strokes[j];
+   if(pts.length<2)continue;
+   const segmentProgress=clamp(eased*letter.strokes.length-j);
+   // Nearly invisible "star chart" guides appear first.
+   ctx.globalAlpha=1;ctx.shadowBlur=0;
+   ctx.lineWidth=mobile?.75:1.05;
+   ctx.strokeStyle='rgba(255,255,255,'+(visibility*.095).toFixed(3)+')';
+   ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+   for(let k=1;k<pts.length;k++)ctx.lineTo(pts[k].x,pts[k].y);
+   ctx.stroke();
+   if(segmentProgress>.001){
+    const shimmer=reduced.matches?1:.86+.14*Math.sin(t*2+letter.index*.79);
+    ctx.globalAlpha=1;
+    ctx.shadowColor='rgba(255,255,255,.95)';
+    ctx.shadowBlur=mobile?15:24;
+    ctx.lineWidth=mobile?2.6:3.5;
+    ctx.strokeStyle='rgba(255,255,255,'+(.35*visibility*segmentProgress*shimmer).toFixed(3)+')';
+    const tip=partialConstellationStroke(pts,segmentProgress);ctx.stroke();
+    ctx.shadowBlur=mobile?6:11;
+    ctx.lineWidth=mobile?1.05:1.55;
+    ctx.strokeStyle='rgba(255,255,255,'+(.88*visibility*segmentProgress*shimmer).toFixed(3)+')';
+    partialConstellationStroke(pts,segmentProgress);ctx.stroke();
+    ctx.shadowBlur=0;
+    if(!reduced.matches&&segmentProgress>.04&&segmentProgress<.99&&tip){
+     drawLetterStar(tip.x,tip.y,mobile?32:43,visibility*.92);
+    }
+   }
+   // Letter outlines are separate stars: each one ignites after the line reaches it.
+   for(let k=0;k<pts.length;k++){
+    const arrived=clamp((segmentProgress-k/(pts.length-1))*9);
+    const flicker=reduced.matches?1:.58+.42*Math.pow(Math.max(0,Math.sin(t*(1.9+(k%5)*.21)+k*2.5+letter.index)),2);
+    const afterglow=reduced.matches?1:.82+.18*Math.sin(t*.78+letter.index*1.13);
+    const alpha=visibility*(.12+arrived*.90*flicker*afterglow);
+    const prominent=(k%5===0||k===pts.length-1);
+    drawLetterStar(pts[k].x,pts[k].y,(mobile?prominent?24:13:prominent?32:19),alpha);
    }
   }
-  pts.forEach((point,i)=>{
-   const lit=clamp((eased-i/(pts.length-1))*6);
-   const shimmer=reduced.matches?1:.69+.31*Math.sin(t*(1.55+i*.1)+i*2.3+pathIndex);
-   const size=(mobile?2:2.65)*(i%3===0?1.2:1);
-   glowStar(point.x,point.y,size,visibility*(.20+lit*.66)*shimmer,t,i+pathIndex*1.7);
-  });
- });
+ }
  ctx.restore();
 }
 
