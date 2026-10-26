@@ -8,6 +8,106 @@ const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 let renderer=null,w=innerWidth,h=innerHeight,last=0,time=0,accumulator=0,raf=0,scroll=scrollY,progress=0,dirty=true,lastPointer=null,lastImpulse=0,lastWaterFrame=0;
 const rand=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);};
 const stars=Array.from({length:180},(_,i)=>({x:rand(i+2),y:rand(i+203),size:i%19===0?2:.35+rand(i+92)*.9,phase:rand(i+339)*6.28}));
+
+// Constellations live only around the closing chapter, away from the central copy.
+const closingChapter=document.getElementById('depths');
+const constellationPaths=[
+ [[.075,.19],[.16,.13],[.25,.24],[.32,.20],[.35,.34],[.26,.41]],
+ [[.76,.13],[.86,.20],[.935,.14],[.90,.32],[.79,.39],[.73,.32]],
+ [[.07,.80],[.17,.66],[.245,.77],[.32,.69],[.38,.85]],
+ [[.70,.74],[.79,.64],[.91,.76],[.86,.88]]
+];
+let constellationStartedAt=null;
+function starVertex(point,i,t){
+ const sway=reduced.matches?0:Math.sin(t*.12+i*1.83)*1.6;
+ return {x:point[0]*w+sway,y:point[1]*h+sway*.65};
+}
+function traceConstellation(points,fraction){
+ if(fraction<=0)return null;
+ const segments=[];let total=0;
+ for(let i=1;i<points.length;i++){
+  const distance=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);
+  segments.push(distance);total+=distance;
+ }
+ let remaining=total*clamp(fraction),tip=points[0];
+ ctx.beginPath();ctx.moveTo(tip.x,tip.y);
+ for(let i=0;i<segments.length;i++){
+  const a=points[i],b=points[i+1],d=segments[i];
+  if(remaining>=d){ctx.lineTo(b.x,b.y);tip=b;remaining-=d;}
+  else{
+   const u=d?remaining/d:0;
+   tip={x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u};
+   ctx.lineTo(tip.x,tip.y);break;
+  }
+ }
+ return tip;
+}
+function glowStar(x,y,size,alpha,t,phase){
+ if(alpha<=.005)return;
+ const r=size*3.6,g=ctx.createRadialGradient(x,y,0,x,y,r);
+ g.addColorStop(0,'rgba(240,249,255,'+(alpha*.44).toFixed(3)+')');
+ g.addColorStop(.24,'rgba(156,208,255,'+(alpha*.12).toFixed(3)+')');
+ g.addColorStop(1,'rgba(112,172,238,0)');
+ ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
+ const blink=reduced.matches?1:.78+.22*Math.sin(t*1.9+phase);
+ ctx.fillStyle='rgba(231,246,255,'+(alpha*blink*.88).toFixed(3)+')';
+ ctx.beginPath();ctx.moveTo(x,y-size*1.65);
+ ctx.lineTo(x+size*.13,y-size*.18);
+ ctx.lineTo(x+size*1.28,y);
+ ctx.lineTo(x+size*.13,y+size*.16);
+ ctx.lineTo(x,y+size*1.65);
+ ctx.lineTo(x-size*.13,y+size*.16);
+ ctx.lineTo(x-size*1.28,y);
+ ctx.lineTo(x-size*.13,y-size*.18);
+ ctx.closePath();ctx.fill();
+}
+function drawConstellations(t){
+ if(!closingChapter||!ctx)return;
+ const box=closingChapter.getBoundingClientRect();
+ if(box.top>=h*.98||box.bottom<=h*.06){constellationStartedAt=null;return;}
+ if(constellationStartedAt===null)constellationStartedAt=t;
+ const visibility=clamp((h*.98-box.top)/(h*.58))*clamp((box.bottom-h*.06)/(h*.28));
+ if(visibility<.002)return;
+ const elapsed=reduced.matches?Infinity:Math.max(0,t-constellationStartedAt);
+ const mobile=w<650;
+ ctx.save();ctx.globalCompositeOperation='screen';ctx.lineCap='round';ctx.lineJoin='round';
+ constellationPaths.forEach((path,pathIndex)=>{
+  const pts=path.map((p,i)=>starVertex(p,i+pathIndex*7,t));
+  const p=reduced.matches?1:clamp((elapsed-pathIndex*.54)/2.15);
+  const eased=p*p*(3-2*p);
+  const pulse=reduced.matches?1:.86+.14*Math.sin(t*.91+pathIndex*1.27);
+  // The entire constellation is barely visible before the bright joining trace.
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);
+  ctx.shadowBlur=0;ctx.lineWidth=mobile?.58:.74;
+  ctx.strokeStyle='rgba(172,204,232,'+(visibility*.058).toFixed(3)+')';ctx.stroke();
+  if(eased>.001){
+   ctx.shadowColor='rgba(155,213,255,.65)';
+   ctx.shadowBlur=mobile?9:17;ctx.lineWidth=mobile?1.6:2.3;
+   ctx.strokeStyle='rgba(102,177,242,'+(visibility*.15*eased*pulse).toFixed(3)+')';
+   const tip=traceConstellation(pts,eased);ctx.stroke();
+   ctx.shadowBlur=mobile?4:7;ctx.lineWidth=mobile?.65:1.05;
+   ctx.strokeStyle='rgba(214,239,255,'+(visibility*.52*eased*pulse).toFixed(3)+')';
+   traceConstellation(pts,eased);ctx.stroke();ctx.shadowBlur=0;
+   // A moving point of light traces the path one segment at a time.
+   if(p>.03&&p<.98&&tip){
+    const r=mobile?9:13,g=ctx.createRadialGradient(tip.x,tip.y,0,tip.x,tip.y,r);
+    g.addColorStop(0,'rgba(255,255,255,'+(visibility*.56).toFixed(3)+')');
+    g.addColorStop(.3,'rgba(176,221,255,'+(visibility*.18).toFixed(3)+')');
+    g.addColorStop(1,'rgba(176,221,255,0)');
+    ctx.fillStyle=g;ctx.fillRect(tip.x-r,tip.y-r,r*2,r*2);
+   }
+  }
+  pts.forEach((point,i)=>{
+   const lit=clamp((eased-i/(pts.length-1))*6);
+   const shimmer=reduced.matches?1:.69+.31*Math.sin(t*(1.55+i*.1)+i*2.3+pathIndex);
+   const size=(mobile?2:2.65)*(i%3===0?1.2:1);
+   glowStar(point.x,point.y,size,visibility*(.20+lit*.66)*shimmer,t,i+pathIndex*1.7);
+  });
+ });
+ ctx.restore();
+}
+
 function initRenderer(){try{renderer=createWaterRenderer(water,field);renderer?.resize(w,h);}catch(error){console.warn('Water rendering unavailable; using the lightweight fallback.',error.message);renderer=null;}}
 initRenderer();
 water.addEventListener('webglcontextlost',e=>{e.preventDefault();renderer=null;dirty=true;});
@@ -139,6 +239,7 @@ function drawBackground(t){
     if(alpha>.002)sparkle(x,y,s.size,alpha);
   }ctx.restore();
   if(cosmos>.1){ctx.save();ctx.globalCompositeOperation='screen';const cloud=ctx.createRadialGradient(w*.8,h*.34,0,w*.8,h*.34,w*.65);cloud.addColorStop(0,`rgba(25,39,91,${cosmos*.12})`);cloud.addColorStop(.5,`rgba(24,31,68,${cosmos*.045})`);cloud.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=cloud;ctx.fillRect(0,0,w,h);ctx.restore();}
+  drawConstellations(t);
 }
 function frame(ms){
   raf=0;if(document.hidden)return;
