@@ -5,7 +5,7 @@
   <meta name="description" content="과제 시간 계산기, 팀플 역할 분배기, 공강 품앗이, 교수님 메일 교정 등 대학생활 도구.">
 <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Pretendard + Editorial Serif (Newsreader & Playfair Display) + JetBrains Mono -->
+  <!-- Typography: restrained, practical campus utility -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,13 +203,53 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #9C968C;
     }
-  </style>
+  
+/* UNI-SURVIVAL 2026: calm utility, typography-first, low decoration */
+:root{--tool-ink:#192637;--tool-muted:#64748b;--tool-line:#e1e8f0;--tool-accent:#244a69}
+html,body{font-family:'Pretendard','Noto Sans KR',system-ui,-apple-system,sans-serif!important;background:#f4f6f8!important;color:var(--tool-ink)}
+header{position:relative!important;background:#f4f6f8!important;border-color:var(--tool-line)!important}
+#view-unisurvival{background:#f4f6f8!important}
+#view-unisurvival .bg-white,#view-unisurvival .saas-card{background:#fff!important}
+#view-unisurvival .saas-card,#view-unisurvival .saas-subcard{
+  border-radius:15px!important;border:1px solid var(--tool-line)!important;box-shadow:none!important;
+}
+#view-unisurvival .saas-subcard{background:#f8fafc!important}
+#view-unisurvival h1,#view-unisurvival h2,#view-unisurvival h3{
+  font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif!important;letter-spacing:-.045em;line-height:1.4;color:#192637!important
+}
+#view-unisurvival .text-primary{color:var(--tool-accent)!important}
+#view-unisurvival .bg-primary{background:var(--tool-accent)!important}
+#view-unisurvival .bg-primaryTint{background:#eff4f7!important}
+#view-unisurvival .border-primary{border-color:var(--tool-accent)!important}
+#view-unisurvival .step-badge{background:#edf2f6!important;color:var(--tool-accent)!important;letter-spacing:0}
+#view-unisurvival .main-nav-btn{
+  border-radius:11px!important;font-size:13px!important;letter-spacing:-.01em!important;padding:11px 14px!important;
+}
+#view-unisurvival .saas-input,#view-unisurvival input,#view-unisurvival textarea,#view-unisurvival select{
+  border-radius:10px!important;box-shadow:none!important
+}
+#view-unisurvival .shadow-soft,#view-unisurvival .shadow-soft-sm,#view-unisurvival .shadow-soft-lg{
+  box-shadow:none!important
+}
+#view-unisurvival .rounded-2xl{border-radius:16px!important}
+#view-unisurvival .rounded-xl{border-radius:12px!important}
+#view-unisurvival .bg-gradient-to-br{background:#f4f6f8!important}
+#view-unisurvival .text-textMuted{color:#6f8193!important}
+#view-unisurvival .text-textSub{color:#53677d!important}
+#view-unisurvival button{transition:background-color .16s ease,border-color .16s ease,color .16s ease!important}
+#view-unisurvival button:hover{box-shadow:none!important}
+#view-unisurvival .saas-slider::-webkit-slider-thumb{background:#244a69!important}
+#headerClock{display:none}
+#headerClock+button{display:none}
+#view-unisurvival .app-inner-header .lg\\:items-center button[onclick*="switchSiteView"]{display:none}
+@media(max-width:720px){#view-unisurvival .max-w-7xl{padding-left:14px!important;padding-right:14px!important}}
+</style>
 </head><body class="min-h-screen bg-bgSurface text-textMain">
-<header class="bg-white border-b border-borderLight sticky top-0 z-40"><div class="max-w-7xl mx-auto px-5 py-3 flex flex-wrap justify-between items-center gap-3"><strong class="text-lg font-extrabold text-slate-900">UNI-SURVIVAL <span class="text-xs font-medium text-slate-500">캠퍼스 생존 도구</span></strong><a href="../" class="text-sm font-semibold text-primary hover:underline">← 심해 포트폴리오</a></div></header>
+<header class="bg-white border-b border-borderLight sticky top-0 z-40"><div class="max-w-7xl mx-auto px-5 py-3 flex flex-wrap justify-between items-center gap-3"><strong class="text-lg font-extrabold text-slate-900">UNI-SURVIVAL <span class="text-xs font-medium text-slate-500">대학생 생활 도구</span></strong><a href="../" class="text-sm font-semibold text-primary hover:underline">← 심해 포트폴리오</a></div></header>
 <div id="view-unisurvival" class="relative z-10 flex-grow bg-bgSurface text-textMain">
     
     <!-- Embedded App Top Sub-Header (Return to Hub + 4 Tool Tabs) -->
-    <div class="bg-white border-b border-borderLight shadow-soft-sm">
+    <div class="bg-white border-b border-borderLight app-inner-header">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         
         <!-- Left: Return to Personal Portfolio Hub Button -->
@@ -1970,4 +2010,13 @@ const STORAGE_KEY='uni_survival_standalone_v1';
 function saveAppState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({currentCalcType,currentCalcDiff,vol:document.getElementById('calcVolumeSlider').value,perf:document.getElementById('calcPerfectionSlider').value,dist:document.getElementById('calcDistractSlider').value,deadline:document.getElementById('calcDeadlineSlider').value,teamTitle:document.getElementById('teamTitleInput').value,teamMembersData,teamPeaceRules,barterCardsData}));}catch(e){}}
 function loadAppState(){try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(!d)return;if(d.currentCalcType&&TASK_TYPES[d.currentCalcType])currentCalcType=d.currentCalcType;if(d.currentCalcDiff)currentCalcDiff=d.currentCalcDiff;for(const [id,key] of [['calcVolumeSlider','vol'],['calcPerfectionSlider','perf'],['calcDistractSlider','dist'],['calcDeadlineSlider','deadline'],['teamTitleInput','teamTitle']])if(d[key]!=null)document.getElementById(id).value=d[key];if(Array.isArray(d.teamMembersData)&&d.teamMembersData.length>=2)teamMembersData=d.teamMembersData;if(Array.isArray(d.teamPeaceRules))teamPeaceRules=d.teamPeaceRules;if(Array.isArray(d.barterCardsData))barterCardsData=d.barterCardsData;}catch(e){}}
 function resetAllDemoData(){localStorage.removeItem(STORAGE_KEY);window.location.reload();}
-window.onload=function(){updateHeaderClock();loadAppState();renderTaskTypeCards();setCalcDifficulty(currentCalcDiff);updateAssignmentCalc();renderTeamMemberInputs();renderTeamRules();recalcTeamRoles();renderBarterFilterPills();renderBarterCards();loadEmailSample('bad');renderEmailScenarioCards();renderAutoEmail();lucide.createIcons();};</script></body></html>
+window.onload=function(){updateHeaderClock();loadAppState();renderTaskTypeCards();setCalcDifficulty(currentCalcDiff);updateAssignmentCalc();renderTeamMemberInputs();renderTeamRules();recalcTeamRoles();renderBarterFilterPills();renderBarterCards();loadEmailSample('bad');renderEmailScenarioCards();renderAutoEmail();lucide.createIcons();};</script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  const clock=document.getElementById('headerClock');
+  const reset=clock?.parentElement;
+  if(reset)reset.remove();
+  document.querySelectorAll('.app-inner-header button[onclick*="switchSiteView"]').forEach(el=>el.remove());
+});
+</script>
+</body></html>
