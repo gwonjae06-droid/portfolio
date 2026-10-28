@@ -106,3 +106,15 @@
  .preview-host iframe{height:54dvh}
 }
 @media(prefers-reduced-motion:reduce){.project-detail-button,.project-dialog *{transition:none!important}}
+
+/* Game portfolio: only the finished-enough playable game is a link.
+ * Other games use quiet, non-interactive development labels. */
+.project-links.games{align-items:center;row-gap:10px}
+.project-links.games .game-in-development{
+ display:inline-flex;align-items:center;gap:6px;color:#8ba6b2;
+ font-size:10px;line-height:1.6;white-space:nowrap;cursor:default;
+}
+.project-links.games .game-in-development::before{
+ content:'';display:inline-block;width:5px;height:5px;border-radius:50%;
+ background:#75919c;flex:0 0 auto;
+}
