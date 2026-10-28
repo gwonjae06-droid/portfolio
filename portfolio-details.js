@@ -2,24 +2,28 @@
 (()=>{'use strict';
 const PROJECTS={
  games:{
-  title:'GAME WORKS',kicker:'GAME DESIGN & DEVELOPMENT',summary:'장르와 기술이 서로 다른 세 게임을 통해 전투 연출, 탐험, 보스전의 경험을 실험하고 있습니다.',
-  tags:['게임 기획','인터랙션','게임 로직'],
-  why:'이야기 속 장면을 읽기만 하는 대신, 조작하고 선택하며 경험할 수 있도록 만들고 싶었습니다. 그래서 전투 중심 시연, 캠퍼스 공포 게임, 마인크래프트 보스전 모드를 각각 다른 방식으로 제작하고 있습니다.',
-  features:['OChams 3D Battle: 전체 화면 턴제 전투, 캐릭터 애니메이션과 시네마틱 액션 연출을 다루는 웹 프로토타입','CAMPUS LEGENDS: Three.js 기반 3D 캠퍼스 공포게임 EP01. 탐색, 위험, 체크포인트, 두 엔딩을 구현한 로컬 개발 단계','Oibung Trials: Minecraft Java 1.21.1 NeoForge 기반 보스 러시 모드. 보스 3종과 전용 전투 공간'],
-  decisions:'게임마다 요구되는 상호작용을 분리했습니다. OChams는 화면 전체의 전투 연출, CAMPUS LEGENDS는 탐색과 입력·체크포인트의 연결, Oibung Trials는 모드 환경에서의 보스전 구조에 초점을 둡니다.',
-  status:'OChams는 공개 웹 시연 주소가 있습니다. CAMPUS LEGENDS는 로컬 개발·테스트 단계이며 공개 웹 실행 주소는 확인되지 않았습니다. Oibung Trials는 Minecraft용 모드 프로젝트로 별도 실행 환경이 필요합니다.',
-  preview:'https://gwonjae06-droid.github.io/ochams-3d-battle/',
-  previewTitle:'OChams 3D Battle 실제 공개 웹 시연',previewName:'OChams 웹 플레이',
+  title:'GAME WORKS',kicker:'GAME DESIGN & DEVELOPMENT',
+  summary:'오이붕 아레나는 현재 웹에서 플레이할 수 있으며, 나머지 게임들은 개발 중입니다.',
+  tags:['2D 웹 게임','액션 시뮬레이션','게임 개발'],
+  why:'캐릭터별 행동을 직접 구성하고 전투를 시뮬레이션하는 실험을 시작으로, 다양한 게임의 플레이 경험을 만들어 보고 있습니다.',
+  features:[
+   '오이붕 아레나: 커스텀 캐릭터 제작, 블록 기반 스킬 구성, 자동 전투와 전투 이펙트를 갖춘 2D 웹 게임',
+   'OChams 3D Battle — 개발 중',
+   'CAMPUS LEGENDS — 개발 중',
+   'Oibung Trials — 개발 중'
+  ],
+  decisions:'현재 직접 플레이 가능한 오이붕 아레나의 링크만 공개하고, 개발 중인 다른 게임은 링크 없이 상태만 안내합니다.',
+  status:'오이붕 아레나: 플레이 가능. OChams 3D Battle · CAMPUS LEGENDS · Oibung Trials: 개발 중.',
+  preview:'https://gwonjae06-droid.github.io/oibung-ballfight-base/',
+  previewTitle:'오이붕 아레나 실제 웹 게임',previewName:'오이붕 아레나 플레이',
   links:[
-   ['OChams 직접 플레이','https://gwonjae06-droid.github.io/ochams-3d-battle/'],
-   ['OChams 소스','https://github.com/gwonjae06-droid/ochams-3d-battle'],
-   ['CAMPUS LEGENDS 저장소','https://github.com/gwonjae06-droid/campus-legends'],
-   ['Oibung Trials 저장소','https://github.com/gwonjae06-droid/oibung-trials']
+   ['오이붕 아레나 플레이','https://gwonjae06-droid.github.io/oibung-ballfight-base/']
   ],
   sub:[
-   ['OChams 3D Battle','JavaScript · 웹','턴제 전투 화면, 캐릭터 동작, 연출 중심의 시연'],
-   ['CAMPUS LEGENDS','TypeScript · Vite · Three.js','캠퍼스 괴담을 탐색하는 3D 공포게임, 로컬 개발 단계'],
-   ['Oibung Trials','Java · NeoForge','세 보스와 전용 아레나를 갖춘 Minecraft 보스 러시 모드']
+   ['오이붕 아레나','HTML · CSS · JavaScript','커스텀 캐릭터를 만들고 스킬을 조합해 자동 전투를 즐기는 2D 아레나'],
+   ['OChams 3D Battle','개발 중',''],
+   ['CAMPUS LEGENDS','개발 중',''],
+   ['Oibung Trials','개발 중','']
   ]
  },
  mindscape:{
@@ -99,7 +103,8 @@ function openProject(key){
  if(p.sub){
   p.sub.forEach(([name,tech,desc])=>{
    const card=make('article','detail-subproject');
-   card.append(make('h4','',name),make('span','',tech),make('p','',desc));
+   card.append(make('h4','',name),make('span','',tech));
+   if(desc)card.append(make('p','',desc));
    sub.append(card);
   });
  }
