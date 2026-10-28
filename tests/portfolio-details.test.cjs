@@ -38,7 +38,7 @@ test('real public project and building pages are documented', () => {
   assert.match(html, /WebGL · JavaScript · Wave simulation/);
   assert.match(html, /Dream big\./);
   assert.match(javascript, /https:\/\/gwonjae06-droid\.github\.io\/mindscape\//);
-  assert.match(javascript, /https:\/\/gwonjae06-droid\.github\.io\/ochams-3d-battle\//);
+  assert.match(javascript, /https:\/\/gwonjae06-droid\.github\.io\/oibung-ballfight-base\//);
   assert.match(css, /@media\(max-width:600px\)/);
 });
 
@@ -47,4 +47,39 @@ test('existing water engine and interaction entry point remain linked', () => {
   assert.match(html, /id="water"/);
   assert.match(html, /id="abyss"/);
   assert.match(html, /id="floater"/);
+});
+
+test('game section links only to the playable Oibung Arena; all other games show development status', () => {
+  const start = html.indexOf('<a class="project-art game-art"');
+  const nextCard = html.indexOf('<article class="project">', start);
+  const gameCard = html.slice(start, nextCard);
+  const playUrl = 'https://gwonjae06-droid.github.io/oibung-ballfight-base/';
+  assert.ok(start > -1 && nextCard > start);
+  const urls = [...gameCard.matchAll(/href="([^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(urls, [playUrl, playUrl], 'artwork and game play link point to Oibung Arena only');
+  for (const name of ['OChams 3D Battle', 'CAMPUS LEGENDS', 'Oibung Trials']) {
+    assert.match(gameCard, new RegExp(name + ' · 개발 중'));
+  }
+  assert.equal((gameCard.match(/class="game-in-development"/g) || []).length, 3);
+  assert.match(gameCard, /오이붕 아레나 플레이/);
+});
+
+test('game case-study previews Oibung Arena and never links to developing games', () => {
+  const gameStart = javascript.indexOf(' games:{');
+  const next = javascript.indexOf(' mindscape:{', gameStart);
+  const games = javascript.slice(gameStart, next);
+  assert.ok(gameStart >= 0 && next > gameStart);
+  assert.match(games, /preview:'https:\/\/gwonjae06-droid\.github\.io\/oibung-ballfight-base\/'/);
+  const urls = [...games.matchAll(/https?:\/\/[^'"]+/g)].map(m => m[0]);
+  assert.deepEqual(urls, [
+    'https://gwonjae06-droid.github.io/oibung-ballfight-base/',
+    'https://gwonjae06-droid.github.io/oibung-ballfight-base/'
+  ]);
+  assert.ok(!games.includes('ochams-3d-battle'));
+  assert.ok(!games.includes('github.com/gwonjae06-droid/campus-legends'));
+  assert.ok(!games.includes('github.com/gwonjae06-droid/oibung-trials'));
+  for (const name of ['OChams 3D Battle', 'CAMPUS LEGENDS', 'Oibung Trials']) {
+    assert.ok(games.includes("['" + name + "','개발 중','']"));
+  }
+  assert.match(javascript, /if\(desc\)card\.append\(make\('p','',desc\)\)/);
 });
